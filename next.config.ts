@@ -6,4 +6,4 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 };
 
-export default withMdkCheckout(nextConfig);
+export default withMdkCheckout();
