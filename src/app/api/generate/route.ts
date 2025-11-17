@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const client = getOpenAIClient();
 
     const imageResponse = await client.images.generate({
-      model: "gpt-image-1",
+      model: "dall-e-2",
       prompt,
       size: "1024x1024",
     });

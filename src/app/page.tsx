@@ -1,15 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCheckout } from "@moneydevkit/nextjs";
 
 const MAX_PROMPT_LENGTH = 400;
 
 export default function Home() {
-  const router = useRouter();
+  const { navigate, isNavigating } = useCheckout();
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isSubmitting = isLoading || isNavigating;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,8 +26,8 @@ export default function Home() {
     setError(null);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-      const response = await fetch(`${baseUrl}/api/generate`, {
+      const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+      const response = await fetch(`${configuredOrigin}/api/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,11 +41,27 @@ export default function Home() {
         throw new Error(payload?.error ?? "Failed to generate an image.");
       }
 
-      router.push(
-        `/success?image=${encodeURIComponent(payload.imageUrl)}&prompt=${encodeURIComponent(
-          trimmedPrompt,
-        )}`,
-      );
+      const successPath = `/success?image=${encodeURIComponent(payload.imageUrl)}&prompt=${encodeURIComponent(
+        trimmedPrompt,
+      )}`;
+
+      const successOrigin =
+        process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
+        (typeof window !== "undefined" ? window.location.origin : "");
+      const successUrl = successOrigin ? `${successOrigin}${successPath}` : successPath;
+
+      await navigate({
+        title: "Custom AI Artwork",
+        description: trimmedPrompt.slice(0, 120),
+        amount: 500,
+        currency: "USD",
+        metadata: {
+          prompt: trimmedPrompt,
+          imageUrl: payload.imageUrl,
+          generatedAt: new Date().toISOString(),
+          successUrl,
+        },
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error while generating.";
       setError(message);
@@ -90,10 +108,10 @@ export default function Home() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {isLoading ? "Generating image…" : "Generate & continue to checkout"}
+              {isSubmitting ? "Preparing checkout…" : "Generate & continue to checkout"}
             </button>
           </form>
         </div>
