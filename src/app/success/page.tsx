@@ -37,12 +37,6 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             <h2 className="text-xl font-semibold">Prompt recap</h2>
             <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{prompt}</p>
             <div className="space-y-2 text-sm text-slate-500">
-              <p>Next steps:</p>
-              <ul className="list-inside list-disc space-y-1">
-                <li>Persist the image URL in your database/order record.</li>
-                <li>Send fulfillment emails or webhooks after checkout.</li>
-                <li>Optionally provide download limits or expiry.</li>
-              </ul>
             </div>
             <Link
               href="/"
