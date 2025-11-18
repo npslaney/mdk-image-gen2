@@ -1,24 +1,8 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import { generateImageForPrompt } from "@/lib/generate-image";
 
 type GenerateRequest = {
   prompt?: string;
-};
-
-let cachedClient: OpenAI | null = null;
-
-const getOpenAIClient = () => {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not configured.");
-  }
-
-  if (!cachedClient) {
-    cachedClient = new OpenAI({ apiKey });
-  }
-
-  return cachedClient;
 };
 
 export async function POST(request: Request) {
@@ -37,20 +21,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const client = getOpenAIClient();
-
-    const imageResponse = await client.images.generate({
-      model: "dall-e-2",
-      prompt,
-      size: "1024x1024",
-    });
-
-    const { url, b64_json: base64 } = imageResponse.data?.[0] ?? {};
-    const imageUrl = url ?? (base64 ? `data:image/png;base64,${base64}` : undefined);
-
-    if (!imageUrl) {
-      throw new Error("The image API did not return a URL.");
-    }
+    const imageUrl = await generateImageForPrompt(prompt);
 
     return NextResponse.json({
       imageUrl,

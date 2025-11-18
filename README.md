@@ -38,11 +38,11 @@ Visit `http://localhost:3000` and enter a prompt. Once the serverless route retu
 
 | Path | Purpose |
 | ---- | ------- |
-| `src/app/page.tsx` | Client component with prompt form, validation, and POST request to `/api/generate`. |
-| `src/app/api/generate/route.ts` | Server route that calls `openai.images.generate` and returns the image URL. |
-| `src/app/success/page.tsx` | Displays the generated image & prompt as if a checkout library redirected back here post-payment. |
+| `src/app/page.tsx` | Client component with prompt form and CTA that routes to `/success?prompt=...` (simulating checkout redirect). |
+| `src/app/api/generate/route.ts` | Server route that calls `openai.images.generate` and returns the resulting image URL. |
+| `src/app/success/page.tsx` | Server component that receives the prompt, generates the image on load, and renders the final artwork. |
 
-Drop your real checkout page between the prompt form and success redirect—e.g., send the prompt to your backend, create a Checkout Session, and have the provider redirect to `/success?image=...`.
+Drop your real checkout page between the prompt form and success redirect—e.g., persist the prompt/order info, send customers through your payment provider, then have the provider redirect to `/success?prompt=...` after purchase.
 
 ## Deployment on Vercel
 
