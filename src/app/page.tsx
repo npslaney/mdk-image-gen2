@@ -1,14 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCheckout } from "@moneydevkit/nextjs";
 
 const MAX_PROMPT_LENGTH = 400;
 
 export default function Home() {
-  const router = useRouter();
+  const { navigate, isNavigating } = useCheckout();
   const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -20,10 +19,19 @@ export default function Home() {
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
-    router.push(`/success?prompt=${encodeURIComponent(trimmedPrompt)}`);
+    navigate({
+      title: "AI-Generated Image",
+      description: trimmedPrompt,
+      amount: 20,
+      currency: "USD",
+      metadata: {
+        type: "image_generation",
+        prompt: trimmedPrompt,
+        successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
+      },
+    });
   };
 
   return (
@@ -64,10 +72,10 @@ export default function Home() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isNavigating}
               className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {isLoading ? "Sending you to checkout…" : "Continue to checkout"}
+              {isNavigating ? "Sending you to checkout…" : "Continue to checkout"}
             </button>
           </form>
         </div>
