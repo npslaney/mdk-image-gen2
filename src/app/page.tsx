@@ -25,7 +25,7 @@ export default function Home() {
       title: "AI-Generated Image",
       description: trimmedPrompt,
       amount: 20,
-      currency: "USD",
+      currency: "SAT",
       metadata: {
         type: "image_generation",
         prompt: trimmedPrompt,
