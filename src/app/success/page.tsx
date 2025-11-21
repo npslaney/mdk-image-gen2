@@ -1,40 +1,114 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { generateImageForPrompt } from "@/lib/generate-image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCheckoutSuccess } from "@moneydevkit/nextjs";
+import { useEffect, useState, Suspense } from "react";
 
-export const dynamic = "force-dynamic";
+function SuccessPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isCheckoutPaidLoading, isCheckoutPaid, metadata } = useCheckoutSuccess();
+  
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-type SuccessPageProps = {
-  searchParams: Promise<{
-    prompt?: string;
-  }>;
-};
+  // Get prompt from URL or metadata
+  const prompt = searchParams.get("prompt")?.trim() || (metadata?.prompt as string | undefined)?.trim();
 
-export default async function SuccessPage({ searchParams }: SuccessPageProps) {
-  const resolvedSearchParams = await searchParams;
-  const prompt = resolvedSearchParams.prompt?.trim();
+  // Redirect if no prompt
+  useEffect(() => {
+    if (!prompt) {
+      router.push("/");
+    }
+  }, [prompt, router]);
+
+  // Generate image in the background (non-blocking)
+  useEffect(() => {
+    if (!prompt || !isCheckoutPaid) return;
+
+    const generateImage = async () => {
+      setIsGenerating(true);
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to generate image");
+        }
+
+        const data = await response.json();
+        setImageUrl(data.imageUrl);
+      } catch (error) {
+        setGenerationError(
+          error instanceof Error ? error.message : "Unable to generate the image."
+        );
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    generateImage();
+  }, [prompt, isCheckoutPaid]);
 
   if (!prompt) {
-    redirect("/");
+    return null; // Will redirect via useEffect
   }
 
-  let imageUrl: string | null = null;
-  let generationError: string | null = null;
-
-  try {
-    imageUrl = await generateImageForPrompt(prompt);
-  } catch (error) {
-    generationError = error instanceof Error ? error.message : "Unable to generate the image.";
+  // Show verification loading state
+  if (isCheckoutPaidLoading || isCheckoutPaid === null) {
+    return (
+      <div className="min-h-dvh bg-slate-50 px-4 py-16 text-slate-900">
+        <div className="mx-auto flex max-w-4xl flex-col gap-10">
+          <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 text-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+            <p className="text-lg font-medium text-slate-700">Verifying payment…</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
+  // Show payment not confirmed
+  if (!isCheckoutPaid) {
+    return (
+      <div className="min-h-dvh bg-slate-50 px-4 py-16 text-slate-900">
+        <div className="mx-auto flex max-w-4xl flex-col gap-10">
+          <header className="space-y-3 text-center">
+            <p className="text-sm font-semibold uppercase tracking-widest text-red-600">Error</p>
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
+              Payment not confirmed
+            </h1>
+            <p className="text-slate-600">
+              Your payment could not be verified. Please contact support if you believe this is an error.
+            </p>
+          </header>
+          <div className="text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Return to home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment confirmed - show success
   return (
     <div className="min-h-dvh bg-slate-50 px-4 py-16 text-slate-900">
       <div className="mx-auto flex max-w-4xl flex-col gap-10">
         <header className="space-y-3 text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-green-600">Success</p>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
-            Payment confirmed — your artwork is ready
+            Payment confirmed — your artwork is {isGenerating ? "generating" : "ready"}
           </h1>
         </header>
 
@@ -60,7 +134,12 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
             </div>
           ) : (
             <div className="relative aspect-square overflow-hidden rounded-3xl border border-slate-100 bg-slate-100">
-              {imageUrl ? (
+              {isGenerating && !imageUrl ? (
+                <div className="flex h-full flex-col items-center justify-center space-y-3">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+                  <p className="text-sm font-medium text-slate-700">Generating your image…</p>
+                </div>
+              ) : imageUrl ? (
                 <Image
                   src={imageUrl}
                   alt={`Generated artwork for: ${prompt}`}
@@ -76,6 +155,25 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-dvh bg-slate-50 px-4 py-16 text-slate-900">
+          <div className="mx-auto flex max-w-4xl flex-col gap-10">
+            <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 text-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600"></div>
+              <p className="text-lg font-medium text-slate-700">Loading…</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <SuccessPageContent />
+    </Suspense>
   );
 }
 
