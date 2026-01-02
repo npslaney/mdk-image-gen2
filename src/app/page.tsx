@@ -26,10 +26,11 @@ export default function Home() {
       description: trimmedPrompt,
       amount: 20,
       currency: "SAT",
+      successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
+      requireCustomerData: ["email"],
       metadata: {
         type: "image_generation",
         prompt: trimmedPrompt,
-        successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
       },
     });
   };
