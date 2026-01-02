@@ -25,7 +25,7 @@ export default function Home() {
       title: "AI-Generated Image",
       description: trimmedPrompt,
       amount: 20,
-      currency: "SAT",
+      currency: "USD",
       successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
       requireCustomerData: ["email"],
       metadata: {
