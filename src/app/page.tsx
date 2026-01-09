@@ -24,7 +24,7 @@ export default function Home() {
     navigate({
       title: "AI-Generated Image",
       description: trimmedPrompt,
-      amount: 20,
+      amount: 200,
       currency: "USD",
       metadata: {
         type: "image_generation",
