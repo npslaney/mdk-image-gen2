@@ -1,18 +1,15 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useCheckout, useProducts } from "@moneydevkit/nextjs";
+import { useCheckout } from "@moneydevkit/nextjs";
 
 const MAX_PROMPT_LENGTH = 400;
+const PRODUCT_ID = "cmkn1y45r000iad0yjsz5sm45";
 
 export default function Home() {
   const { createCheckout, isLoading } = useCheckout();
-  const { products } = useProducts();
   const [prompt, setPrompt] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const selectedProduct = products?.find((p) => p.id === selectedProductId);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,16 +20,11 @@ export default function Home() {
       return;
     }
 
-    if (!selectedProductId) {
-      setError("Please select an image option.");
-      return;
-    }
-
     setError(null);
 
     const result = await createCheckout({
       type: "PRODUCTS",
-      product: selectedProductId,
+      product: PRODUCT_ID,
       successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
       requireCustomerData: ["email"],
       metadata: {
@@ -80,70 +72,16 @@ export default function Home() {
               <span>Powered by OpenAI Images</span>
             </div>
 
-            <fieldset className="space-y-3">
-              <legend className="block text-sm font-medium text-slate-700">
-                Choose an option
-              </legend>
-              {!products ? (
-                <p className="text-sm text-slate-500">Loading options…</p>
-              ) : products.length === 0 ? (
-                <p className="text-sm text-slate-500">No products available.</p>
-              ) : (
-                <div className="grid gap-3">
-                  {products.map((product) => {
-                    const price = product.prices[0];
-                    const isSelected = selectedProductId === product.id;
-                    return (
-                      <label
-                        key={product.id}
-                        className={`flex cursor-pointer items-center justify-between rounded-2xl border-2 px-4 py-3 transition ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="product"
-                            value={product.id}
-                            checked={isSelected}
-                            onChange={() => setSelectedProductId(product.id)}
-                            className="h-4 w-4 text-blue-600"
-                          />
-                          <div>
-                            <p className="font-medium text-slate-900">{product.name}</p>
-                            {product.description && (
-                              <p className="text-sm text-slate-500">{product.description}</p>
-                            )}
-                          </div>
-                        </div>
-                        <span className="font-semibold text-slate-900">
-                          {price?.amountType === "CUSTOM"
-                            ? "Pay what you want"
-                            : `$${((price?.priceAmount ?? 0) / 100).toFixed(2)}`}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </fieldset>
-
             {error ? (
               <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>
             ) : null}
 
             <button
               type="submit"
-              disabled={isLoading || !selectedProductId}
+              disabled={isLoading}
               className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {isLoading
-                ? "Creating checkout…"
-                : selectedProduct
-                  ? `Continue to checkout – $${((selectedProduct.prices[0]?.priceAmount ?? 0) / 100).toFixed(2)}`
-                  : "Select an option"}
+              {isLoading ? "Creating checkout…" : "Continue to checkout"}
             </button>
           </form>
         </div>
