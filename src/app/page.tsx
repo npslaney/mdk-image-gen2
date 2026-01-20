@@ -1,16 +1,20 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useCheckout } from "@moneydevkit/nextjs";
+import { useCheckout, useProducts } from "@moneydevkit/nextjs";
 
 const MAX_PROMPT_LENGTH = 400;
 
 export default function Home() {
-  const { navigate, isNavigating } = useCheckout();
+  const { createCheckout, isLoading } = useCheckout();
+  const { products } = useProducts();
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  // Get the first product from your dashboard
+  const product = products?.[0];
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedPrompt = prompt.trim();
 
@@ -19,20 +23,29 @@ export default function Home() {
       return;
     }
 
+    if (!product) {
+      setError("Product not available. Please try again.");
+      return;
+    }
+
     setError(null);
 
-    navigate({
-      title: "AI-Generated Image",
-      description: trimmedPrompt,
-      amount: 20,
-      currency: "USD",
+    const result = await createCheckout({
+      type: "PRODUCTS",
+      product: product.id,
       successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
       requireCustomerData: ["email"],
       metadata: {
-        type: "image_generation",
         prompt: trimmedPrompt,
       },
     });
+
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+
+    window.location.href = result.data.checkoutUrl;
   };
 
   return (
@@ -73,10 +86,14 @@ export default function Home() {
 
             <button
               type="submit"
-              disabled={isNavigating}
+              disabled={isLoading || !product}
               className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {isNavigating ? "Sending you to checkout…" : "Continue to checkout"}
+              {isLoading
+                ? "Creating checkout…"
+                : product
+                  ? `Continue to checkout – $${((product.prices[0]?.priceAmount ?? 0) / 100).toFixed(2)}`
+                  : "Loading…"}
             </button>
           </form>
         </div>
