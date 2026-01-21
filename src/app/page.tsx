@@ -4,13 +4,15 @@ import { FormEvent, useState } from "react";
 import { useCheckout } from "@moneydevkit/nextjs";
 
 const MAX_PROMPT_LENGTH = 400;
+const PRODUCT_ID = "cmkoj68eh002dad0yyi21daux";
 
 export default function Home() {
-  const { navigate, isNavigating } = useCheckout();
+  const { createCheckout } = useCheckout();
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedPrompt = prompt.trim();
 
@@ -20,18 +22,25 @@ export default function Home() {
     }
 
     setError(null);
+    setIsLoading(true);
 
-    navigate({
-      title: "AI-Generated Image",
-      description: trimmedPrompt,
-      amount: 200,
-      currency: "USD",
+    const result = await createCheckout({
+      type: "PRODUCTS",
+      product: PRODUCT_ID,
+      successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
       metadata: {
         type: "image_generation",
         prompt: trimmedPrompt,
-        successUrl: `/success?prompt=${encodeURIComponent(trimmedPrompt)}`,
       },
     });
+
+    if (result.error) {
+      setError(result.error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    window.location.href = result.data.checkoutUrl;
   };
 
   return (
@@ -72,10 +81,10 @@ export default function Home() {
 
             <button
               type="submit"
-              disabled={isNavigating}
+              disabled={isLoading}
               className="flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-base font-semibold text-white transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              {isNavigating ? "Sending you to checkout…" : "Continue to checkout"}
+              {isLoading ? "Sending you to checkout…" : "Continue to checkout"}
             </button>
           </form>
         </div>
