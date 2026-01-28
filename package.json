@@ -9,8 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@moneydevkit/nextjs": "^0.9.0-beta.1",
-    "next": "16.0.10",
+    "@moneydevkit/nextjs": "^0.9.0-beta.3",
+    "next": "^16.1.6",
     "openai": "^6.9.0",
     "react": "19.2.0",
     "react-dom": "19.2.0"
