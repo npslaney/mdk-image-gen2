@@ -12,7 +12,7 @@ Use this project as the foundation for wiring in a real checkout provider (Strip
 ## Prerequisites
 
 - Node.js 18.18+ or 20.0+
-- An OpenAI API key with access to `gpt-image-1`
+- An OpenAI API key with access to `gpt-image-2`
 
 ## Environment Variables
 

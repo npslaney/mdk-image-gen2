@@ -4,8 +4,9 @@ export const generateImageForPrompt = async (prompt: string) => {
   const client = getOpenAIClient();
 
   const response = await client.images.generate({
-    model: "gpt-image-1",
+    model: "gpt-image-2",
     prompt,
+    quality: "high",
     size: "1024x1024",
   });
 
@@ -18,4 +19,3 @@ export const generateImageForPrompt = async (prompt: string) => {
 
   return imageUrl;
 };
-
