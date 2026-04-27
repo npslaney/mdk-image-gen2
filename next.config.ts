@@ -1,9 +1,9 @@
-import type { NextConfig } from "next";
+import type { NextConfigOverrides } from "@moneydevkit/nextjs/next-plugin";
 import withMdkCheckout from "@moneydevkit/nextjs/next-plugin";
 
-const nextConfig: NextConfig = {
+const nextConfig: NextConfigOverrides = {
   /* config options here */
   reactCompiler: true,
 };
 
-export default withMdkCheckout();
+export default withMdkCheckout(nextConfig);
